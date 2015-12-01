@@ -1,0 +1,63 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'maven'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+version = '0.1.0-SNAPSHOT'
+group = 'com.spiddekauga'
+
+jar {
+	manifest {
+		attributes	'Implementation-Title': 'common-utils',
+					'Implementation-Version': version
+	}
+}
+
+ext {
+	artifactId = 'common-utils'
+}
+
+task sourceJar(type: Jar) {
+	classifier = 'sources'
+	from sourceSets.main.allJava
+}
+
+artifacts {
+	archives sourceJar
+}
+
+configurations {
+	deployerJars
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	deployerJars "org.apache.maven.wagon:wagon-ssh:2.2"
+}
+
+install {
+	repositories.mavenInstaller {
+		pom.artifactId = project.artifactId
+	}
+}
+
+uploadArchives {
+	repositories {
+		// Set mavenRepositoryUrl & mavenUserName inside gradle.properties
+		mavenDeployer {
+			configuration = configurations.deployerJars
+ 			pom.artifactId = project.name
+			repository(url: mavenRepositoryUrl + '/releases') {
+				authentication(userName: mavenUserName)
+			}
+			snapshotRepository(url: mavenRepositoryUrl + '/snapshots') {
+				authentication(userName: mavenUserName)
+			}
+		}
+	}
+}
