@@ -2,6 +2,7 @@ package com.spiddekauga.utils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -124,6 +125,25 @@ public class Strings {
 	}
 
 	/**
+	 * Get the list as a string with '; ' as the delimiter.
+	 * @param list the list to create a string list from
+	 * @return string list separated by the delimiter
+	 */
+	public static String toString(Iterable<?> list) {
+		return toString(list, "; ");
+	}
+
+	/**
+	 * Get the array as a string with '; ' as the delimiter
+	 * @param <T> array type
+	 * @param array the array to create the list from
+	 * @return string list separated by the delimiter
+	 */
+	public static <T> String toString(T[] array) {
+		return toString(Arrays.asList(array));
+	}
+
+	/**
 	 * Get the list as a string
 	 * @param list the list to create a string list from
 	 * @param delimiter how to delimit the elements
@@ -152,18 +172,7 @@ public class Strings {
 	 * @return string list separated by the delimiter
 	 */
 	public static <T> String toString(T[] array, String delimiter) {
-		StringBuilder stringBuilder = new StringBuilder();
-
-		for (int i = 0; i < array.length; i++) {
-			T t = array[i];
-			stringBuilder.append(t.toString());
-
-			if ((i + 1) < array.length) {
-				stringBuilder.append(delimiter);
-			}
-		}
-
-		return stringBuilder.toString();
+		return toString(Arrays.asList(array), delimiter);
 	}
 
 	/**
