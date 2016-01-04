@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -18,7 +21,8 @@ import com.spiddekauga.utils.Strings.TokenizePatterns;
  * @param <Searchable> The object type that is stored and searchable
  */
 public class TokenSearch<Searchable> {
-	private Multimap<String, Searchable> mObjects = ArrayListMultimap.create();
+	private List<Searchable> mObjects = new ArrayList<>();
+	private Multimap<String, Searchable> mTokenObjects = ArrayListMultimap.create();
 
 	/**
 	 * Add a search token to the object that should be searchable
@@ -28,11 +32,13 @@ public class TokenSearch<Searchable> {
 	 *        according to the tokenize pattern specified
 	 */
 	public void add(Searchable object, TokenizePatterns tokenizePattern, String... texts) {
+		mObjects.add(object);
+
 		for (String text : texts) {
 			String[] tokens = Strings.tokenize(tokenizePattern, text).split(" ");
 
 			for (String token : tokens) {
-				mObjects.put(token, object);
+				mTokenObjects.put(token, object);
 			}
 		}
 	}
@@ -40,37 +46,59 @@ public class TokenSearch<Searchable> {
 	/**
 	 * Search for objects
 	 * @param searchString when searching for more than two words AND both words has to be
-	 *        found for the object
+	 *        found for the object. If this is empty every object is returned
 	 * @return found objects sorted by relevance
 	 */
 	public List<Searchable> search(String searchString) {
-		final Map<Searchable, AtomicInteger> foundObjects = new HashMap<>();
+		if (searchString.trim().isEmpty()) {
+			return mObjects;
+		}
+
+		final Map<Searchable, AtomicInteger> relevanceCounts = new HashMap<>();
+		Map<Searchable, Set<String>> usesTokens = new HashMap<>();
+		int tokenCount = 0;
 
 		// Find
 		String[] searchWords = searchString.trim().split(" ");
 		for (String token : searchWords) {
-			Collection<Searchable> foundByToken = mObjects.get(token);
+			if (!token.isEmpty()) {
+				tokenCount++;
 
-			for (Searchable foundObject : foundByToken) {
-				AtomicInteger foundCount = foundObjects.get(foundObject);
+				Collection<Searchable> foundByToken = mTokenObjects.get(token);
 
-				if (foundCount == null) {
-					foundCount = new AtomicInteger(1);
-					foundObjects.put(foundObject, foundCount);
-				} else {
-					foundCount.incrementAndGet();
+				for (Searchable foundObject : foundByToken) {
+					AtomicInteger relevanceCount = relevanceCounts.get(foundObject);
+
+					if (relevanceCount == null) {
+						relevanceCount = new AtomicInteger(1);
+						relevanceCounts.put(foundObject, relevanceCount);
+					} else {
+						relevanceCount.incrementAndGet();
+					}
+
+					Set<String> usesToken = usesTokens.get(foundObject);
+					if (usesToken == null) {
+						usesToken = new HashSet<>();
+						usesTokens.put(foundObject, usesToken);
+					}
+					usesToken.add(token);
 				}
 			}
 		}
 
 		// Sort
 		List<Searchable> foundAndSorted = new ArrayList<>();
-		foundAndSorted.addAll(foundObjects.keySet());
+		for (Entry<Searchable, Set<String>> entry : usesTokens.entrySet()) {
+			if (entry.getValue().size() == tokenCount) {
+				foundAndSorted.add(entry.getKey());
+			}
+		}
+
 		foundAndSorted.sort(new Comparator<Searchable>() {
 			@Override
 			public int compare(Searchable o1, Searchable o2) {
-				AtomicInteger count1 = foundObjects.get(o1);
-				AtomicInteger count2 = foundObjects.get(o2);
+				AtomicInteger count1 = relevanceCounts.get(o1);
+				AtomicInteger count2 = relevanceCounts.get(o2);
 				return count2.get() - count1.get();
 			}
 		});

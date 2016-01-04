@@ -236,15 +236,27 @@ public class Strings {
 	public static String tokenize(TokenizePatterns pattern, String text, String splitBy) {
 		String[] words = text.split(" ");
 		StringBuilder tokens = new StringBuilder();
-		for (String word : words) {
-			if (!word.isEmpty()) {
+
+		switch (pattern) {
+		case FROM_START:
+			for (String word : words) {
+				for (int i = 1; i <= word.length(); ++i) {
+					tokens.append(word.substring(0, i)).append(" ");
+				}
+			}
+			break;
+
+		case ALL:
+			for (String word : words) {
 				for (int i = 0; i < word.length(); ++i) {
 					for (int currentLength = 1; currentLength <= word.length() - i; ++currentLength) {
 						tokens.append(word.substring(i, i + currentLength)).append(" ");
 					}
 				}
 			}
+			break;
 		}
+
 
 		return tokens.toString();
 	}
