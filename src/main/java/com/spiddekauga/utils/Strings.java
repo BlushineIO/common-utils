@@ -226,6 +226,50 @@ public class Strings {
 		return character == ' ' || character == '\n' || character == '\t';
 	}
 
+	/**
+	 * Tokenize the string according to the tokenizer pattern. Splits by places
+	 * @param pattern the tokenize pattern
+	 * @param text the text to tokenize
+	 * @param splitBy how to split into words that should be tokenized
+	 * @return list of string tokens
+	 */
+	public static String tokenize(TokenizePatterns pattern, String text, String splitBy) {
+		String[] words = text.split(" ");
+		StringBuilder tokens = new StringBuilder();
+		for (String word : words) {
+			if (!word.isEmpty()) {
+				for (int i = 0; i < word.length(); ++i) {
+					for (int currentLength = 1; currentLength <= word.length() - i; ++currentLength) {
+						tokens.append(word.substring(i, i + currentLength)).append(" ");
+					}
+				}
+			}
+		}
+
+		return tokens.toString();
+	}
+
+	/**
+	 * Tokenize the string according to the tokenizer pattern. Splits into words by empty
+	 * spaces
+	 * @param pattern the tokenize pattern
+	 * @param text the text to tokenize
+	 * @return list of string tokens
+	 */
+	public static String tokenize(TokenizePatterns pattern, String text) {
+		return tokenize(pattern, text, " ");
+	}
+
+	/**
+	 * Different tokenize patterns
+	 */
+	public enum TokenizePatterns {
+		/** Create tokens only from start of the word. E.g. TOK -> [T, TO, TOK] */
+		FROM_START,
+		/** Create tokens for all parts of the word. E.g. TOK -> [T, O, K, TO, OK, TOK] */
+		ALL,
+	}
+
 	/** Vowel pattern */
 	private static Pattern mVowelPattern = Pattern.compile("[aeiouAEIOU]");
 }
