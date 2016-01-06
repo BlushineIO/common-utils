@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import com.spiddekauga.utils.Strings.TokenizePatterns;
 
 /**
  * A class that helps one search for objects with auto-complete functionality. I.e. it
@@ -36,7 +35,7 @@ public class TokenSearch<Searchable> {
 		mObjects.add(object);
 
 		for (String text : texts) {
-			String[] tokens = Strings.tokenize(tokenizePattern, text.toLowerCase()).split(" ");
+			List<String> tokens = Strings.tokenize(tokenizePattern, text.toLowerCase());
 
 			for (String token : tokens) {
 				mTokenObjects.put(token, object);

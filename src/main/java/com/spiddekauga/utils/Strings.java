@@ -2,8 +2,12 @@ package com.spiddekauga.utils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -227,21 +231,21 @@ public class Strings {
 	}
 
 	/**
-	 * Tokenize the string according to the tokenizer pattern. Splits by places
+	 * Tokenize the string according to the tokenize pattern. Splits by places
 	 * @param pattern the tokenize pattern
 	 * @param text the text to tokenize
 	 * @param splitBy how to split into words that should be tokenized
 	 * @return list of string tokens
 	 */
-	public static String tokenize(TokenizePatterns pattern, String text, String splitBy) {
+	public static List<String> tokenize(TokenizePatterns pattern, String text, String splitBy) {
 		String[] words = text.split(" ");
-		StringBuilder tokens = new StringBuilder();
+		Set<String> tokens = new HashSet<>();
 
 		switch (pattern) {
 		case FROM_START:
 			for (String word : words) {
 				for (int i = 1; i <= word.length(); ++i) {
-					tokens.append(word.substring(0, i)).append(" ");
+					tokens.add(word.substring(0, i));
 				}
 			}
 			break;
@@ -250,36 +254,34 @@ public class Strings {
 			for (String word : words) {
 				for (int i = 0; i < word.length(); ++i) {
 					for (int currentLength = 1; currentLength <= word.length() - i; ++currentLength) {
-						tokens.append(word.substring(i, i + currentLength)).append(" ");
+						tokens.add(word.substring(i, i + currentLength));
 					}
 				}
 			}
 			break;
+		case SINGLE:
+			tokens.add(text);
+			break;
+
+		case WORD:
+			for (String word : words) {
+				tokens.add(word);
+			}
 		}
 
 
-		return tokens.toString();
+		return new ArrayList<>(tokens);
 	}
 
 	/**
-	 * Tokenize the string according to the tokenizer pattern. Splits into words by empty
+	 * Tokenize the string according to the tokenize pattern. Splits into words by empty
 	 * spaces
 	 * @param pattern the tokenize pattern
 	 * @param text the text to tokenize
 	 * @return list of string tokens
 	 */
-	public static String tokenize(TokenizePatterns pattern, String text) {
+	public static List<String> tokenize(TokenizePatterns pattern, String text) {
 		return tokenize(pattern, text, " ");
-	}
-
-	/**
-	 * Different tokenize patterns
-	 */
-	public enum TokenizePatterns {
-		/** Create tokens only from start of the word. E.g. TOK -> [T, TO, TOK] */
-		FROM_START,
-		/** Create tokens for all parts of the word. E.g. TOK -> [T, O, K, TO, OK, TOK] */
-		ALL,
 	}
 
 	/** Vowel pattern */
