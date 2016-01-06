@@ -17,12 +17,13 @@ import com.spiddekauga.utils.Strings.TokenizePatterns;
 
 /**
  * A class that helps one search for objects with auto-complete functionality. I.e. it
- * creates tokens that can be searched
+ * creates tokens that can be searched. Not the most efficient way, but OK at the moment.
  * @param <Searchable> The object type that is stored and searchable
  */
 public class TokenSearch<Searchable> {
 	private List<Searchable> mObjects = new ArrayList<>();
 	private Multimap<String, Searchable> mTokenObjects = ArrayListMultimap.create();
+	private Multimap<Searchable, String> mObjectTokens = ArrayListMultimap.create();
 
 	/**
 	 * Add a search token to the object that should be searchable
@@ -35,16 +36,44 @@ public class TokenSearch<Searchable> {
 		mObjects.add(object);
 
 		for (String text : texts) {
-			String[] tokens = Strings.tokenize(tokenizePattern, text).split(" ");
+			String[] tokens = Strings.tokenize(tokenizePattern, text.toLowerCase()).split(" ");
 
 			for (String token : tokens) {
 				mTokenObjects.put(token, object);
+				mObjectTokens.put(object, token);
 			}
 		}
 	}
 
 	/**
-	 * Search for objects
+	 * Update an object's search tokens. This will remove all previous search tokens from
+	 * this object. I.e. this is a shortcut method for first calling
+	 * {@link #remove(Object)} and then {@link #add(Object, TokenizePatterns, String...)}
+	 * @param object the object that should be found if these are auto-completed.
+	 * @param tokenizePattern how the words should be tokenized
+	 * @param texts the words that should be auto-completed. The words will be tokenized
+	 *        according to the tokenize pattern specified
+	 */
+	public void update(Searchable object, TokenizePatterns tokenizePattern, String... texts) {
+		remove(object);
+		add(object, tokenizePattern, texts);
+	}
+
+	/**
+	 * Remove an object and its tokens from the search.
+	 * @param object the object that should be removed
+	 */
+	public void remove(Searchable object) {
+		Collection<String> tokensToRemove = mObjectTokens.removeAll(object);
+		if (tokensToRemove != null) {
+			for (String token : tokensToRemove) {
+				mTokenObjects.remove(token, object);
+			}
+		}
+	}
+
+	/**
+	 * Search for objects. Case insensitive
 	 * @param searchString when searching for more than two words AND both words has to be
 	 *        found for the object. If this is empty every object is returned
 	 * @return found objects sorted by relevance
@@ -59,7 +88,7 @@ public class TokenSearch<Searchable> {
 		int tokenCount = 0;
 
 		// Find
-		String[] searchWords = searchString.trim().split(" ");
+		String[] searchWords = searchString.trim().toLowerCase().split(" ");
 		for (String token : searchWords) {
 			if (!token.isEmpty()) {
 				tokenCount++;
