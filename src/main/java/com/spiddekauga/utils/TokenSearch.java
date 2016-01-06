@@ -20,7 +20,7 @@ import com.google.common.collect.Multimap;
  * @param <Searchable> The object type that is stored and searchable
  */
 public class TokenSearch<Searchable> {
-	private List<Searchable> mObjects = new ArrayList<>();
+	private Set<Searchable> mObjects = new HashSet<>();
 	private Multimap<String, Searchable> mTokenObjects = ArrayListMultimap.create();
 	private Multimap<Searchable, String> mObjectTokens = ArrayListMultimap.create();
 
@@ -32,7 +32,9 @@ public class TokenSearch<Searchable> {
 	 *        according to the tokenize pattern specified
 	 */
 	public void add(Searchable object, TokenizePatterns tokenizePattern, String... texts) {
-		mObjects.add(object);
+		if (!mObjects.contains(object)) {
+			mObjects.add(object);
+		}
 
 		for (String text : texts) {
 			List<String> tokens = Strings.tokenize(tokenizePattern, text.toLowerCase());
@@ -63,6 +65,7 @@ public class TokenSearch<Searchable> {
 	 * @param object the object that should be removed
 	 */
 	public void remove(Searchable object) {
+		mObjects.remove(object);
 		Collection<String> tokensToRemove = mObjectTokens.removeAll(object);
 		if (tokensToRemove != null) {
 			for (String token : tokensToRemove) {
@@ -75,11 +78,12 @@ public class TokenSearch<Searchable> {
 	 * Search for objects. Case insensitive
 	 * @param searchString when searching for more than two words AND both words has to be
 	 *        found for the object. If this is empty every object is returned
-	 * @return found objects sorted by relevance
+	 * @return found objects sorted by relevance. This list is just a copy and is always
+	 *         OK to change
 	 */
 	public List<Searchable> search(String searchString) {
 		if (searchString.trim().isEmpty()) {
-			return mObjects;
+			return new ArrayList<>(mObjects);
 		}
 
 		final Map<Searchable, AtomicInteger> relevanceCounts = new HashMap<>();
