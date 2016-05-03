@@ -4,10 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Measures how long things take.
- * @author Matteus Magnusson <matteus.magnusson@spiddekauga.com>
+ * Measures how long time things take
  */
 public class Profiler {
+
+private int mPadding = 10;
+private long mStartTime;
+private long mEndTime;
+private List<TimeWrapper> mIntermediateTimes = new ArrayList<>();
 
 	/**
 	 * Start measuring the time. This automatically resets the profiler
@@ -18,6 +22,15 @@ public class Profiler {
 	}
 
 	/**
+	 * Reset the profiler
+	 */
+	public void reset() {
+		mStartTime = 0;
+		mEndTime = 0;
+		mIntermediateTimes.clear();
+	}
+
+/**
 	 * Stop measuring the time
 	 */
 	public void stop() {
@@ -33,6 +46,14 @@ public class Profiler {
 	}
 
 	/**
+	 * Same as {@link #toString(String)} with null as the header argument
+	 */
+	@Override
+	public String toString() {
+		return toString(null);
+	}
+
+/**
 	 * Get string with all information (used for printing)
 	 * @param header optional header for the information (can be null)
 	 * @return string with all information
@@ -75,23 +96,6 @@ public class Profiler {
 	}
 
 	/**
-	 * Same as {@link #toString(String)} with null as the header argument
-	 */
-	@Override
-	public String toString() {
-		return toString(null);
-	}
-
-	/**
-	 * Reset the profiler
-	 */
-	public void reset() {
-		mStartTime = 0;
-		mEndTime = 0;
-		mIntermediateTimes.clear();
-	}
-
-	/**
 	 * Change the padding (total number of characters) in the intermediate times
 	 * @param padding total number of characters in intermediate times before the name
 	 */
@@ -103,16 +107,10 @@ public class Profiler {
 	 * Wrapper for time and name
 	 */
 	private static class TimeWrapper {
+		private String name;
+		private long time = System.currentTimeMillis();
 		private TimeWrapper(String name) {
 			this.name = name;
 		}
-
-		private String name;
-		private long time = System.currentTimeMillis();
 	}
-
-	private int mPadding = 10;
-	private long mStartTime;
-	private long mEndTime;
-	private List<TimeWrapper> mIntermediateTimes = new ArrayList<>();
 }
