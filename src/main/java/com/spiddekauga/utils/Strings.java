@@ -16,6 +16,9 @@ import java.util.regex.Pattern;
  * @author Matteus Magnusson <matteus.magnusson@spiddekauga.com>
  */
 public class Strings {
+/** Vowel pattern */
+private static Pattern mVowelPattern = Pattern.compile("[aeiouAEIOU]");
+
 	/**
 	 * Pads the string with the specified character to the right
 	 * @param <T> type of message to write
@@ -45,6 +48,17 @@ public class Strings {
 	}
 
 	/**
+	 * Pads the string with empty spaces to the right
+	 * @param <T> type of the message to write
+	 * @param message the string/value to pad
+	 * @param n number of spaces total the string should contain (including padded)
+	 * @return padded string
+	 */
+	public static <T> String padRight(T message, int n) {
+		return String.format("%1$-" + n + "s", message);
+	}
+
+/**
 	 * Pads the string with the specified character to the left
 	 * @param <T> type of message to write
 	 * @param message the string/value to pad
@@ -70,17 +84,6 @@ public class Strings {
 			padString += spaceString.substring(firstNonSpace);
 		}
 		return padString;
-	}
-
-	/**
-	 * Pads the string with empty spaces to the right
-	 * @param <T> type of the message to write
-	 * @param message the string/value to pad
-	 * @param n number of spaces total the string should contain (including padded)
-	 * @return padded string
-	 */
-	public static <T> String padRight(T message, int n) {
-		return String.format("%1$-" + n + "s", message);
 	}
 
 	/**
@@ -129,15 +132,6 @@ public class Strings {
 	}
 
 	/**
-	 * Get the list as a string with '; ' as the delimiter.
-	 * @param list the list to create a string list from
-	 * @return string list separated by the delimiter
-	 */
-	public static String toString(Iterable<?> list) {
-		return toString(list, "; ");
-	}
-
-	/**
 	 * Get the array as a string with '; ' as the delimiter
 	 * @param <T> array type
 	 * @param array the array to create the list from
@@ -148,6 +142,15 @@ public class Strings {
 	}
 
 	/**
+	 * Get the list as a string with '; ' as the delimiter.
+	 * @param list the list to create a string list from
+	 * @return string list separated by the delimiter
+	 */
+	public static String toString(Iterable<?> list) {
+		return toString(list, "; ");
+	}
+
+/**
 	 * Get the list as a string
 	 * @param list the list to create a string list from
 	 * @param delimiter how to delimit the elements
@@ -231,49 +234,6 @@ public class Strings {
 	}
 
 	/**
-	 * Tokenize the string according to the tokenize pattern. Splits by places
-	 * @param pattern the tokenize pattern
-	 * @param text the text to tokenize
-	 * @param splitBy how to split into words that should be tokenized
-	 * @return list of string tokens
-	 */
-	public static List<String> tokenize(TokenizePatterns pattern, String text, String splitBy) {
-		String[] words = text.split(" ");
-		Set<String> tokens = new HashSet<>();
-
-		switch (pattern) {
-		case FROM_START:
-			for (String word : words) {
-				for (int i = 1; i <= word.length(); ++i) {
-					tokens.add(word.substring(0, i));
-				}
-			}
-			break;
-
-		case ALL:
-			for (String word : words) {
-				for (int i = 0; i < word.length(); ++i) {
-					for (int currentLength = 1; currentLength <= word.length() - i; ++currentLength) {
-						tokens.add(word.substring(i, i + currentLength));
-					}
-				}
-			}
-			break;
-		case SINGLE:
-			tokens.add(text);
-			break;
-
-		case WORD:
-			for (String word : words) {
-				tokens.add(word);
-			}
-		}
-
-
-		return new ArrayList<>(tokens);
-	}
-
-	/**
 	 * Tokenize the string according to the tokenize pattern. Splits into words by empty
 	 * spaces
 	 * @param pattern the tokenize pattern
@@ -284,6 +244,89 @@ public class Strings {
 		return tokenize(pattern, text, " ");
 	}
 
-	/** Vowel pattern */
-	private static Pattern mVowelPattern = Pattern.compile("[aeiouAEIOU]");
+/**
+ * Tokenize the string according to the tokenize pattern. Splits by places
+ * @param pattern the tokenize pattern
+ * @param text the text to tokenize
+ * @param splitBy how to split into words that should be tokenized
+ * @return list of string tokens
+ */
+public static List<String> tokenize(TokenizePatterns pattern, String text, String splitBy) {
+	String[] words = text.split(" ");
+	Set<String> tokens = new HashSet<>();
+
+	switch (pattern) {
+	case FROM_START:
+		for (String word : words) {
+			for (int i = 1; i <= word.length(); ++i) {
+				tokens.add(word.substring(0, i));
+			}
+		}
+		break;
+
+	case ALL:
+		for (String word : words) {
+			for (int i = 0; i < word.length(); ++i) {
+				for (int currentLength = 1; currentLength <= word.length() - i; ++currentLength) {
+					tokens.add(word.substring(i, i + currentLength));
+				}
+			}
+		}
+		break;
+	case SINGLE:
+		tokens.add(text);
+		break;
+
+	case WORD:
+		for (String word : words) {
+			tokens.add(word);
+		}
+	}
+
+
+	return new ArrayList<>(tokens);
+}
+
+/**
+ * Return true if the string contains HTML markup tags or entities.
+ * @param string String to test
+ * @return true if string contains HTML markup tags or entities.
+ */
+public static boolean isHtml(String string) {
+	return DetectHtml.isHtml(string);
+}
+
+/**
+ * Detect HTML markup in a string This will detect tags or entities
+ * @author dbennett455@gmail.com - David H. Bennett
+ */
+private static class DetectHtml {
+	// adapted from post by Phil Haack and modified to match better
+	final static String tagStart =
+			"\\<\\w+((\\s+\\w+(\\s*\\=\\s*(?:\".*?\"|'.*?'|[^'\"\\>\\s]+))?)+\\s*|\\s*)\\>";
+	final static String tagEnd =
+			"\\</\\w+\\>";
+	final static String tagSelfClosing =
+			"\\<\\w+((\\s+\\w+(\\s*\\=\\s*(?:\".*?\"|'.*?'|[^'\"\\>\\s]+))?)+\\s*|\\s*)/\\>";
+	final static String htmlEntity =
+			"&[a-zA-Z][a-zA-Z0-9]+;";
+	final static Pattern htmlPattern = Pattern.compile(
+			"(" + tagStart + ".*" + tagEnd + ")|(" + tagSelfClosing + ")|(" + htmlEntity + ")",
+			Pattern.DOTALL
+	);
+
+	/**
+	 * Will return true if s contains HTML markup tags or entities.
+	 * @param string String to test
+	 * @return true if string contains HTML
+	 */
+	static boolean isHtml(String string) {
+		boolean ret = false;
+		if (string != null) {
+			ret = htmlPattern.matcher(string).find();
+		}
+		return ret;
+	}
+
+}
 }
