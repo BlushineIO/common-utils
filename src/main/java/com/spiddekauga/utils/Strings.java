@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -204,7 +205,7 @@ private static Pattern mVowelPattern = Pattern.compile("[aeiouAEIOU]");
 
 	/**
 	 * Count words number of words in a text
-	 * @param text
+	 * @param text the text to count the words in
 	 * @return number of words in the text
 	 */
 	public static int wordCount(String text) {
@@ -226,7 +227,7 @@ private static Pattern mVowelPattern = Pattern.compile("[aeiouAEIOU]");
 
 	/**
 	 * Checks if a character is a whitespace or not
-	 * @param character
+	 * @param character check whether this character is a whitespace character
 	 * @return true if whitespace, false if not
 	 */
 	public static boolean isWhitespace(char character) {
@@ -278,14 +279,44 @@ public static List<String> tokenize(TokenizePatterns pattern, String text, Strin
 		break;
 
 	case WORD:
-		for (String word : words) {
-			tokens.add(word);
-		}
+		Collections.addAll(tokens, words);
+		break;
 	}
 
 
 	return new ArrayList<>(tokens);
 }
+
+/**
+ * Merge an array of strings
+ * @param stringArray array of strings to merge into one string
+ * @return all strings in the string array merged into one string
+ */
+public static String merge(String[] stringArray) {
+	return merge(stringArray, "");
+}
+
+/**
+ * Merge an array of strings
+ * @param stringArray array of strings to merge into one string
+ * @param delimiter add this delimiter between the strings in the array
+ * @return all strings in the array merged into one string with delimiter between each string.
+ */
+public static String merge(String[] stringArray, String delimiter) {
+	StringBuilder stringBuilder = new StringBuilder();
+	for (String string : stringArray) {
+
+		// Add delimiter, except first time
+		if (stringBuilder.length() > 0) {
+			stringBuilder.append(delimiter);
+		}
+
+		stringBuilder.append(string);
+	}
+
+	return stringBuilder.toString();
+}
+
 
 /**
  * Return true if the string contains HTML markup tags or entities.
