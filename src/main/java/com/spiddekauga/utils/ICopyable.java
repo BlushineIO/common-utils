@@ -2,7 +2,7 @@ package com.spiddekauga.utils;
 
 /**
  * Returns a copy of the object
- * @author Matteus Magnusson <matteus.magnusson@spiddekauga.com>
+
  * @param <Type> the type to copy and return
  */
 public interface ICopyable<Type> {
