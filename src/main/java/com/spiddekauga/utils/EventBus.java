@@ -10,6 +10,7 @@ import com.squareup.otto.ThreadEnforcer;
 public class EventBus extends Bus {
 private static EventBus mInstance = null;
 private static long mMainThreadId = 1;
+private static ThreadEnforcer mThreadEnforcer = ThreadEnforcer.MAIN;
 
 /**
  * Enforces singleton pattern
@@ -27,12 +28,26 @@ public static void setMainThreadId(long id) {
 }
 
 /**
+ * Set default thread enforces. Must be set before the first call to {@link #getInstance()}.
+ * @param threadEnforcer the thread enforcer to use
+ */
+public static void setThreadEnforcer(ThreadEnforcer threadEnforcer) {
+	if (mInstance != null) {
+		throw new IllegalStateException("Event bus already initialized");
+	}
+	if (threadEnforcer == null) {
+		throw new IllegalArgumentException("threadEnforcer is null");
+	}
+	mThreadEnforcer = threadEnforcer;
+}
+
+/**
  * Get singleton instance
  * @return get instance
  */
 public static EventBus getInstance() {
 	if (mInstance == null) {
-		ThreadEnforcer threadEnforcer = ThreadEnforcer.MAIN;
+		ThreadEnforcer threadEnforcer = mThreadEnforcer;
 
 		// Check if this is an Android application
 		try {
