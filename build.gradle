@@ -1,7 +1,5 @@
 apply plugin: 'java'
 
-sourceCompatibility = JavaVersion.VERSION_1_7
-targetCompatibility = JavaVersion.VERSION_1_7
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 version = '0.1.1-SNAPSHOT'
 group = 'com.spiddekauga'
@@ -11,6 +9,13 @@ jar {
         attributes 'Implementation-Title': 'common-utils',
                 'Implementation-Version': version
     }
+}
+
+
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = JavaVersion.VERSION_1_7
+    targetCompatibility = JavaVersion.VERSION_1_7
 }
 
 repositories {
