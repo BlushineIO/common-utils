@@ -2,6 +2,7 @@ package com.spiddekauga.utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * Various time methods
@@ -15,6 +16,16 @@ public static final String ISO_DATE = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
  * @return simple date format with ISO date
  */
 public static SimpleDateFormat createIsoDateFormat() {
+	SimpleDateFormat simpleDateFormat = new SimpleDateFormat(ISO_DATE, Locale.ENGLISH);
+	simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+	return simpleDateFormat;
+}
+
+/**
+ * Create a simple date format from the ISO date in local format
+ * @return simple date format with ISO date
+ */
+public static SimpleDateFormat createIsoDateFormatLocal() {
 	return new SimpleDateFormat(ISO_DATE, Locale.ENGLISH);
 }
 
