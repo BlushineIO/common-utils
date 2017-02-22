@@ -1,7 +1,5 @@
 package com.spiddekauga.utils;
 
-import com.sun.istack.internal.NotNull;
-
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -41,14 +39,14 @@ public void write(int b) throws IOException {
 }
 
 @Override
-public void write(@NotNull byte[] b) throws IOException {
+public void write(byte[] b) throws IOException {
 	mOutstream.write(b);
 	mcWrittenBytes += b.length;
 	sendWriteEvent();
 }
 
 @Override
-public void write(@NotNull byte[] b, int off, int len) throws IOException {
+public void write(byte[] b, int off, int len) throws IOException {
 	mOutstream.write(b, off, len);
 	mcWrittenBytes += len;
 	sendWriteEvent();
