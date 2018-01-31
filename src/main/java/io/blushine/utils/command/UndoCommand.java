@@ -1,4 +1,4 @@
-package com.spiddekauga.utils.command;
+package io.blushine.utils.command;
 
 /**
  * Implement this interface if a command should be able to be undone, i.e. revert it's execution.

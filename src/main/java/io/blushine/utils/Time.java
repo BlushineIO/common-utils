@@ -1,4 +1,4 @@
-package com.spiddekauga.utils;
+package io.blushine.utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;

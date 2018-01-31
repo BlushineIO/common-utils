@@ -1,4 +1,4 @@
-package com.spiddekauga.utils;
+package io.blushine.utils;
 
 // Copyright (c) 2006 Damien Miller <djm@mindrot.org>
 //
@@ -180,6 +180,48 @@ public class BCrypt {
 	private int P[];
 	private int S[];
 
+/**
+ * Generate a salt for use with the BCrypt.hashpw() method, selecting a reasonable
+ * default for the number of hashing rounds to apply
+ * @return an encoded salt value
+ */
+public static String gensalt() {
+	return gensalt(GENSALT_DEFAULT_LOG2_ROUNDS);
+}
+
+/**
+ * Generate a salt for use with the BCrypt.hashpw() method
+ * @param log_rounds the log2 of the number of rounds of hashing to apply - the work factor
+ * therefore increases as 2**log_rounds.
+ * @return an encoded salt value
+ */
+public static String gensalt(int log_rounds) {
+	return gensalt(log_rounds, new SecureRandom());
+}
+
+/**
+ * Generate a salt for use with the BCrypt.hashpw() method
+ * @param log_rounds the log2 of the number of rounds of hashing to apply - the work factor
+ * therefore increases as 2**log_rounds.
+ * @param random an instance of SecureRandom to use
+ * @return an encoded salt value
+ */
+public static String gensalt(int log_rounds, SecureRandom random) {
+	StringBuffer rs = new StringBuffer();
+	byte rnd[] = new byte[BCRYPT_SALT_LEN];
+	
+	random.nextBytes(rnd);
+	
+	rs.append("$2a$");
+	if (log_rounds < 10) {
+		rs.append("0");
+	}
+	rs.append(Integer.toString(log_rounds));
+	rs.append("$");
+	rs.append(encode_base64(rnd, rnd.length));
+	return rs.toString();
+}
+
 	/**
 	 * Encode a byte array using bcrypt's slightly-modified base64 encoding scheme. Note
 	 * that this is *not* compatible with the standard MIME-base64 encoding.
@@ -222,20 +264,77 @@ public class BCrypt {
 	}
 
 	/**
-	 * Look up the 3 bits base64-encoded by the specified character, range-checking againt
-	 * conversion table
-	 * @param x the base64-encoded value
-	 * @return the decoded value of x
+	 * Check that a plaintext password matches a previously hashed one
+	 * @param plaintext the plaintext password to verify
+	 * @param hashed the previously-hashed password
+	 * @return true if the passwords match, false otherwise
 	 */
-	private static byte char64(char x) {
-		if (x > index_64.length) {
-			return -1;
-		}
-		return index_64[x];
+	public static boolean checkpw(String plaintext, String hashed) {
+		return (hashed.compareTo(hashpw(plaintext, hashed)) == 0);
 	}
 
-	/**
-	 * Decode a string encoded using bcrypt's base64 scheme to a byte array. Note that
+/**
+ * Hash a password using the OpenBSD bcrypt scheme
+ * @param password the password to hash
+ * @param salt the salt to hash with (perhaps generated using BCrypt.gensalt)
+ * @return the hashed password
+ */
+public static String hashpw(String password, String salt) {
+	BCrypt B;
+	String real_salt;
+	byte passwordb[], saltb[], hashed[];
+	char minor = (char) 0;
+	int rounds, off = 0;
+	StringBuffer rs = new StringBuffer();
+	
+	if (salt.charAt(0) != '$' || salt.charAt(1) != '2') {
+		throw new IllegalArgumentException("Invalid salt version");
+	}
+	if (salt.charAt(2) == '$') {
+		off = 3;
+	} else {
+		minor = salt.charAt(2);
+		if (minor != 'a' || salt.charAt(3) != '$') {
+			throw new IllegalArgumentException("Invalid salt revision");
+		}
+		off = 4;
+	}
+	
+	// Extract number of rounds
+	if (salt.charAt(off + 2) > '$') {
+		throw new IllegalArgumentException("Missing salt rounds");
+	}
+	rounds = Integer.parseInt(salt.substring(off, off + 2));
+	
+	real_salt = salt.substring(off + 3, off + 25);
+	try {
+		passwordb = (password + (minor >= 'a' ? "\000" : "")).getBytes("UTF-8");
+	} catch (UnsupportedEncodingException uee) {
+		throw new AssertionError("UTF-8 is not supported");
+	}
+	
+	saltb = decode_base64(real_salt, BCRYPT_SALT_LEN);
+	
+	B = new BCrypt();
+	hashed = B.crypt_raw(passwordb, saltb, rounds);
+	
+	rs.append("$2");
+	if (minor >= 'a') {
+		rs.append(minor);
+	}
+	rs.append("$");
+	if (rounds < 10) {
+		rs.append("0");
+	}
+	rs.append(Integer.toString(rounds));
+	rs.append("$");
+	rs.append(encode_base64(saltb, saltb.length));
+	rs.append(encode_base64(hashed, bf_crypt_ciphertext.length * 4 - 1));
+	return rs.toString();
+}
+
+/**
+ * Decode a string encoded using bcrypt's base64 scheme to a byte array. Note that
 	 * this is *not* compatible with the standard MIME-base64 encoding.
 	 * @param s the string to decode
 	 * @param maxolen the maximum number of bytes to decode
@@ -289,32 +388,157 @@ public class BCrypt {
 	}
 
 	/**
-	 * Blowfish encipher a single 64-bit block encoded as two 32-bit halves
-	 * @param lr an array containing the two 32-bit half blocks
-	 * @param off the position in the array of the blocks
+	 * Perform the central password hashing step in the bcrypt scheme
+	 * @param password the password to hash
+	 * @param salt the binary salt to hash with the password
+	 * @param log_rounds the binary logarithm of the number of rounds of hashing to apply
+	 * @return an array containing the binary hashed password
 	 */
-	private final void encipher(int lr[], int off) {
-		int i, n, l = lr[off], r = lr[off + 1];
-
-		l ^= P[0];
-		for (i = 0; i <= BLOWFISH_NUM_ROUNDS - 2;) {
-			// Feistel substitution on left word
-			n = S[(l >> 24) & 0xff];
-			n += S[0x100 | ((l >> 16) & 0xff)];
-			n ^= S[0x200 | ((l >> 8) & 0xff)];
-			n += S[0x300 | (l & 0xff)];
-			r ^= n ^ P[++i];
-
-			// Feistel substitution on right word
-			n = S[(r >> 24) & 0xff];
-			n += S[0x100 | ((r >> 16) & 0xff)];
-			n ^= S[0x200 | ((r >> 8) & 0xff)];
-			n += S[0x300 | (r & 0xff)];
-			l ^= n ^ P[++i];
+	private byte[] crypt_raw(byte password[], byte salt[], int log_rounds) {
+		int rounds, i, j;
+		int cdata[] = bf_crypt_ciphertext.clone();
+		int clen = cdata.length;
+		byte ret[];
+		
+		if (log_rounds < 4 || log_rounds > 31) {
+			throw new IllegalArgumentException("Bad number of rounds");
 		}
-		lr[off] = r ^ P[BLOWFISH_NUM_ROUNDS + 1];
-		lr[off + 1] = l;
+		rounds = 1 << log_rounds;
+		if (salt.length != BCRYPT_SALT_LEN) {
+			throw new IllegalArgumentException("Bad salt length");
+		}
+		
+		init_key();
+		ekskey(salt, password);
+		for (i = 0; i < rounds; i++) {
+			key(password);
+			key(salt);
+		}
+		
+		for (i = 0; i < 64; i++) {
+			for (j = 0; j < (clen >> 1); j++) {
+				encipher(cdata, j << 1);
+			}
+		}
+		
+		ret = new byte[clen * 4];
+		for (i = 0, j = 0; i < clen; i++) {
+			ret[j++] = (byte) ((cdata[i] >> 24) & 0xff);
+			ret[j++] = (byte) ((cdata[i] >> 16) & 0xff);
+			ret[j++] = (byte) ((cdata[i] >> 8) & 0xff);
+			ret[j++] = (byte) (cdata[i] & 0xff);
+		}
+		return ret;
 	}
+
+/**
+ * Look up the 3 bits base64-encoded by the specified character, range-checking againt
+ * conversion table
+ * @param x the base64-encoded value
+ * @return the decoded value of x
+ */
+private static byte char64(char x) {
+	if (x > index_64.length) {
+		return -1;
+	}
+	return index_64[x];
+}
+
+/**
+ * Initialise the Blowfish key schedule
+ */
+private void init_key() {
+	P = P_orig.clone();
+	S = S_orig.clone();
+}
+
+/**
+ * Perform the "enhanced key schedule" step described by Provos and Mazieres in
+ * "A Future-Adaptable Password Scheme" http://www.openbsd.org/papers/bcrypt-paper.ps
+ * @param data salt information
+ * @param key password information
+ */
+private void ekskey(byte data[], byte key[]) {
+	int i;
+	int koffp[] = {0}, doffp[] = {0};
+	int lr[] = {0, 0};
+	int plen = P.length, slen = S.length;
+	
+	for (i = 0; i < plen; i++) {
+		P[i] = P[i] ^ streamtoword(key, koffp);
+	}
+	
+	for (i = 0; i < plen; i += 2) {
+		lr[0] ^= streamtoword(data, doffp);
+		lr[1] ^= streamtoword(data, doffp);
+		encipher(lr, 0);
+		P[i] = lr[0];
+		P[i + 1] = lr[1];
+	}
+	
+	for (i = 0; i < slen; i += 2) {
+		lr[0] ^= streamtoword(data, doffp);
+		lr[1] ^= streamtoword(data, doffp);
+		encipher(lr, 0);
+		S[i] = lr[0];
+		S[i + 1] = lr[1];
+	}
+}
+
+/**
+ * Key the Blowfish cipher
+ * @param key an array containing the key
+ */
+private void key(byte key[]) {
+	int i;
+	int koffp[] = {0};
+	int lr[] = {0, 0};
+	int plen = P.length, slen = S.length;
+	
+	for (i = 0; i < plen; i++) {
+		P[i] = P[i] ^ streamtoword(key, koffp);
+	}
+	
+	for (i = 0; i < plen; i += 2) {
+		encipher(lr, 0);
+		P[i] = lr[0];
+		P[i + 1] = lr[1];
+	}
+	
+	for (i = 0; i < slen; i += 2) {
+		encipher(lr, 0);
+		S[i] = lr[0];
+		S[i + 1] = lr[1];
+	}
+}
+
+/**
+ * Blowfish encipher a single 64-bit block encoded as two 32-bit halves
+ * @param lr an array containing the two 32-bit half blocks
+ * @param off the position in the array of the blocks
+ */
+private final void encipher(int lr[], int off) {
+	int i, n, l = lr[off], r = lr[off + 1];
+	
+	l ^= P[0];
+	for (i = 0; i <= BLOWFISH_NUM_ROUNDS - 2;) {
+		// Feistel substitution on left word
+		n = S[(l >> 24) & 0xff];
+		n += S[0x100 | ((l >> 16) & 0xff)];
+		n ^= S[0x200 | ((l >> 8) & 0xff)];
+		n += S[0x300 | (l & 0xff)];
+		r ^= n ^ P[++i];
+		
+		// Feistel substitution on right word
+		n = S[(r >> 24) & 0xff];
+		n += S[0x100 | ((r >> 16) & 0xff)];
+		n ^= S[0x200 | ((r >> 8) & 0xff)];
+		n += S[0x300 | (r & 0xff)];
+		l ^= n ^ P[++i];
+	}
+	lr[off] = r ^ P[BLOWFISH_NUM_ROUNDS + 1];
+	lr[off + 1] = l;
+}
 
 	/**
 	 * Cycically extract a word of key material
@@ -334,229 +558,5 @@ public class BCrypt {
 
 		offp[0] = off;
 		return word;
-	}
-
-	/**
-	 * Initialise the Blowfish key schedule
-	 */
-	private void init_key() {
-		P = P_orig.clone();
-		S = S_orig.clone();
-	}
-
-	/**
-	 * Key the Blowfish cipher
-	 * @param key an array containing the key
-	 */
-	private void key(byte key[]) {
-		int i;
-		int koffp[] = { 0 };
-		int lr[] = { 0, 0 };
-		int plen = P.length, slen = S.length;
-
-		for (i = 0; i < plen; i++) {
-			P[i] = P[i] ^ streamtoword(key, koffp);
-		}
-
-		for (i = 0; i < plen; i += 2) {
-			encipher(lr, 0);
-			P[i] = lr[0];
-			P[i + 1] = lr[1];
-		}
-
-		for (i = 0; i < slen; i += 2) {
-			encipher(lr, 0);
-			S[i] = lr[0];
-			S[i + 1] = lr[1];
-		}
-	}
-
-	/**
-	 * Perform the "enhanced key schedule" step described by Provos and Mazieres in
-	 * "A Future-Adaptable Password Scheme" http://www.openbsd.org/papers/bcrypt-paper.ps
-	 * @param data salt information
-	 * @param key password information
-	 */
-	private void ekskey(byte data[], byte key[]) {
-		int i;
-		int koffp[] = { 0 }, doffp[] = { 0 };
-		int lr[] = { 0, 0 };
-		int plen = P.length, slen = S.length;
-
-		for (i = 0; i < plen; i++) {
-			P[i] = P[i] ^ streamtoword(key, koffp);
-		}
-
-		for (i = 0; i < plen; i += 2) {
-			lr[0] ^= streamtoword(data, doffp);
-			lr[1] ^= streamtoword(data, doffp);
-			encipher(lr, 0);
-			P[i] = lr[0];
-			P[i + 1] = lr[1];
-		}
-
-		for (i = 0; i < slen; i += 2) {
-			lr[0] ^= streamtoword(data, doffp);
-			lr[1] ^= streamtoword(data, doffp);
-			encipher(lr, 0);
-			S[i] = lr[0];
-			S[i + 1] = lr[1];
-		}
-	}
-
-	/**
-	 * Perform the central password hashing step in the bcrypt scheme
-	 * @param password the password to hash
-	 * @param salt the binary salt to hash with the password
-	 * @param log_rounds the binary logarithm of the number of rounds of hashing to apply
-	 * @return an array containing the binary hashed password
-	 */
-	private byte[] crypt_raw(byte password[], byte salt[], int log_rounds) {
-		int rounds, i, j;
-		int cdata[] = bf_crypt_ciphertext.clone();
-		int clen = cdata.length;
-		byte ret[];
-
-		if (log_rounds < 4 || log_rounds > 31) {
-			throw new IllegalArgumentException("Bad number of rounds");
-		}
-		rounds = 1 << log_rounds;
-		if (salt.length != BCRYPT_SALT_LEN) {
-			throw new IllegalArgumentException("Bad salt length");
-		}
-
-		init_key();
-		ekskey(salt, password);
-		for (i = 0; i < rounds; i++) {
-			key(password);
-			key(salt);
-		}
-
-		for (i = 0; i < 64; i++) {
-			for (j = 0; j < (clen >> 1); j++) {
-				encipher(cdata, j << 1);
-			}
-		}
-
-		ret = new byte[clen * 4];
-		for (i = 0, j = 0; i < clen; i++) {
-			ret[j++] = (byte) ((cdata[i] >> 24) & 0xff);
-			ret[j++] = (byte) ((cdata[i] >> 16) & 0xff);
-			ret[j++] = (byte) ((cdata[i] >> 8) & 0xff);
-			ret[j++] = (byte) (cdata[i] & 0xff);
-		}
-		return ret;
-	}
-
-	/**
-	 * Hash a password using the OpenBSD bcrypt scheme
-	 * @param password the password to hash
-	 * @param salt the salt to hash with (perhaps generated using BCrypt.gensalt)
-	 * @return the hashed password
-	 */
-	public static String hashpw(String password, String salt) {
-		BCrypt B;
-		String real_salt;
-		byte passwordb[], saltb[], hashed[];
-		char minor = (char) 0;
-		int rounds, off = 0;
-		StringBuffer rs = new StringBuffer();
-
-		if (salt.charAt(0) != '$' || salt.charAt(1) != '2') {
-			throw new IllegalArgumentException("Invalid salt version");
-		}
-		if (salt.charAt(2) == '$') {
-			off = 3;
-		} else {
-			minor = salt.charAt(2);
-			if (minor != 'a' || salt.charAt(3) != '$') {
-				throw new IllegalArgumentException("Invalid salt revision");
-			}
-			off = 4;
-		}
-
-		// Extract number of rounds
-		if (salt.charAt(off + 2) > '$') {
-			throw new IllegalArgumentException("Missing salt rounds");
-		}
-		rounds = Integer.parseInt(salt.substring(off, off + 2));
-
-		real_salt = salt.substring(off + 3, off + 25);
-		try {
-			passwordb = (password + (minor >= 'a' ? "\000" : "")).getBytes("UTF-8");
-		} catch (UnsupportedEncodingException uee) {
-			throw new AssertionError("UTF-8 is not supported");
-		}
-
-		saltb = decode_base64(real_salt, BCRYPT_SALT_LEN);
-
-		B = new BCrypt();
-		hashed = B.crypt_raw(passwordb, saltb, rounds);
-
-		rs.append("$2");
-		if (minor >= 'a') {
-			rs.append(minor);
-		}
-		rs.append("$");
-		if (rounds < 10) {
-			rs.append("0");
-		}
-		rs.append(Integer.toString(rounds));
-		rs.append("$");
-		rs.append(encode_base64(saltb, saltb.length));
-		rs.append(encode_base64(hashed, bf_crypt_ciphertext.length * 4 - 1));
-		return rs.toString();
-	}
-
-	/**
-	 * Generate a salt for use with the BCrypt.hashpw() method
-	 * @param log_rounds the log2 of the number of rounds of hashing to apply - the work
-	 *        factor therefore increases as 2**log_rounds.
-	 * @param random an instance of SecureRandom to use
-	 * @return an encoded salt value
-	 */
-	public static String gensalt(int log_rounds, SecureRandom random) {
-		StringBuffer rs = new StringBuffer();
-		byte rnd[] = new byte[BCRYPT_SALT_LEN];
-
-		random.nextBytes(rnd);
-
-		rs.append("$2a$");
-		if (log_rounds < 10) {
-			rs.append("0");
-		}
-		rs.append(Integer.toString(log_rounds));
-		rs.append("$");
-		rs.append(encode_base64(rnd, rnd.length));
-		return rs.toString();
-	}
-
-	/**
-	 * Generate a salt for use with the BCrypt.hashpw() method
-	 * @param log_rounds the log2 of the number of rounds of hashing to apply - the work
-	 *        factor therefore increases as 2**log_rounds.
-	 * @return an encoded salt value
-	 */
-	public static String gensalt(int log_rounds) {
-		return gensalt(log_rounds, new SecureRandom());
-	}
-
-	/**
-	 * Generate a salt for use with the BCrypt.hashpw() method, selecting a reasonable
-	 * default for the number of hashing rounds to apply
-	 * @return an encoded salt value
-	 */
-	public static String gensalt() {
-		return gensalt(GENSALT_DEFAULT_LOG2_ROUNDS);
-	}
-
-	/**
-	 * Check that a plaintext password matches a previously hashed one
-	 * @param plaintext the plaintext password to verify
-	 * @param hashed the previously-hashed password
-	 * @return true if the passwords match, false otherwise
-	 */
-	public static boolean checkpw(String plaintext, String hashed) {
-		return (hashed.compareTo(hashpw(plaintext, hashed)) == 0);
 	}
 }

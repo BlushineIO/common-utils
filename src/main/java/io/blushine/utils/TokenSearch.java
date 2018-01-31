@@ -1,4 +1,4 @@
-package com.spiddekauga.utils;
+package io.blushine.utils;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;

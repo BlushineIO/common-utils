@@ -1,4 +1,4 @@
-package com.spiddekauga.utils;
+package io.blushine.utils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -55,6 +55,32 @@ public class Collections {
 		return index == size - 1 ? 0 : index + 1;
 	}
 
+/**
+ * Returns wrapped object
+ * @param <ElementType> Element type in the list
+ * @param list the list to get from
+ * @param index the index to get (this will be wrapped)
+ * @return object in the list, null if the list is empty
+ */
+public static <ElementType> ElementType getWrapped(final List<ElementType> list, int index) {
+	if (list.isEmpty()) {
+		return null;
+	}
+	
+	int wrappedIndex = wrapIndex(list, index);
+	return list.get(wrappedIndex);
+}
+
+/**
+ * Wraps an index of an array so that the index always is valid
+ * @param array the array/list to wrap
+ * @param index the index to wrap
+ * @return correct wrapped index
+ */
+public static int wrapIndex(final List<?> array, int index) {
+	return wrapIndex(array.size(), index);
+}
+
 	/**
 	 * Wraps an index of an array so that the index always is valid
 	 * @param size the size of the array/list
@@ -75,32 +101,6 @@ public class Collections {
 		}
 
 		return correctIndex;
-	}
-
-	/**
-	 * Wraps an index of an array so that the index always is valid
-	 * @param array the array/list to wrap
-	 * @param index the index to wrap
-	 * @return correct wrapped index
-	 */
-	public static int wrapIndex(final List<?> array, int index) {
-		return wrapIndex(array.size(), index);
-	}
-
-	/**
-	 * Returns wrapped object
-	 * @param <ElementType> Element type in the list
-	 * @param list the list to get from
-	 * @param index the index to get (this will be wrapped)
-	 * @return object in the list, null if the list is empty
-	 */
-	public static <ElementType> ElementType getWrapped(final List<ElementType> list, int index) {
-		if (list.isEmpty()) {
-			return null;
-		}
-
-		int wrappedIndex = wrapIndex(list, index);
-		return list.get(wrappedIndex);
 	}
 
 	/**

@@ -1,4 +1,4 @@
-package com.spiddekauga.utils;
+package io.blushine.utils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

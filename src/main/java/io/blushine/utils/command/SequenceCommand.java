@@ -1,4 +1,4 @@
-package com.spiddekauga.utils.command;
+package io.blushine.utils.command;
 
 /**
  * Wrapper to execute several commands in a sequence.

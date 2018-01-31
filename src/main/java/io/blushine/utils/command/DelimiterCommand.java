@@ -1,4 +1,4 @@
-package com.spiddekauga.utils.command;
+package io.blushine.utils.command;
 
 /**
  * Empty command that delimits two commands. Useful both when wanting to undo to a specified

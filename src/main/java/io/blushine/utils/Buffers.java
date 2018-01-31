@@ -1,4 +1,4 @@
-package com.spiddekauga.utils;
+package io.blushine.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,6 +10,9 @@ import java.util.ArrayList;
 
  */
 public class Buffers {
+/** Default buffer size */
+private static final int BUFFER_SIZE_DEFAULT = 512;
+
 	/**
 	 * Fully reads an input stream and returns the result as a whole array.
 	 * Uses a temporary buffer size of 512 bytes. If you know the approximately
@@ -71,7 +74,4 @@ public class Buffers {
 
 		return wholeByteArray;
 	}
-
-	/** Default buffer size */
-	private static final int BUFFER_SIZE_DEFAULT = 512;
 }

@@ -1,4 +1,4 @@
-package com.spiddekauga.utils.command;
+package io.blushine.utils.command;
 
 /**
  * Implement this interface when a command is to be combinable with itself. E.g. when changing a

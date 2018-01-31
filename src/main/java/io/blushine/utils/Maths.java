@@ -1,4 +1,4 @@
-package com.spiddekauga.utils;
+package io.blushine.utils;
 
 import java.math.BigDecimal;
 
@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 
  */
 public class Maths {
+/** Float compare value */
+public static float FLOAT_EQUALS_DELTA = 0.001f;
+
 	/**
 	 * Rounds a value to the specified precision
 	 * @param unrounded the value to round
@@ -88,11 +91,15 @@ public class Maths {
 		return magnitude;
 	}
 
-
 	/**
 	 * Wrapper class for magnitude values
 	 */
 	public static class MagnitudeWrapper {
+		/** Integer magnitude */
+		private int intMag = 0;
+		/** Decimal magnitude */
+		private int decMag = 0;
+
 		/**
 		 * @return integer-part magnitude
 		 */
@@ -113,13 +120,5 @@ public class Maths {
 		public int get() {
 			return intMag + decMag;
 		}
-
-		/** Integer magnitude */
-		private int intMag = 0;
-		/** Decimal magnitude */
-		private int decMag = 0;
 	}
-
-	/** Float compare value */
-	public static float FLOAT_EQUALS_DELTA = 0.001f;
 }

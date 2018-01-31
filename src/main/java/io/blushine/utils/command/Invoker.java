@@ -1,4 +1,4 @@
-package com.spiddekauga.utils.command;
+package io.blushine.utils.command;
 
 import java.util.Stack;
 

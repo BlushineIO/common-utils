@@ -1,4 +1,4 @@
-package com.spiddekauga.utils;
+package io.blushine.utils;
 
 
 import java.io.ByteArrayInputStream;
@@ -24,6 +24,16 @@ import javax.crypto.spec.SecretKeySpec;
 
  */
 public class ObjectCrypter {
+/** The initialization vector length */
+private static final int IV_LENGTH = 16;
+/** Deciphers an object */
+private Cipher mDeCipher;
+/** Enciphers an object */
+private Cipher mEnCipher;
+/** The secret key, not to be shared */
+private SecretKeySpec mKey;
+
+
 	/**
 	 * Creates an AES crypter with the specified key
 	 * @param key the key to be used for the cipher
@@ -77,6 +87,25 @@ public class ObjectCrypter {
 
 		return ivAndEncrypted;
 	}
+
+/**
+ * Converts an object into a byte array
+ * @param complexObject
+ * @return byte array of the converted object
+ * @throws IOException
+ */
+private byte[] convertToByteArray(Object complexObject) throws IOException {
+	ByteArrayOutputStream baos;
+	ObjectOutputStream out;
+	
+	baos = new ByteArrayOutputStream();
+	out = new ObjectOutputStream(baos);
+	out.writeObject(complexObject);
+	out.close();
+	
+	return baos.toByteArray();
+	
+}
 
 	/**
 	 * Decrypts an array of bytes into an object.
@@ -136,35 +165,5 @@ public class ObjectCrypter {
 		return o;
 
 	}
-
-
-	/**
-	 * Converts an object into a byte array
-	 * @param complexObject
-	 * @return byte array of the converted object
-	 * @throws IOException
-	 */
-	private byte[] convertToByteArray(Object complexObject) throws IOException {
-		ByteArrayOutputStream baos;
-		ObjectOutputStream out;
-
-		baos = new ByteArrayOutputStream();
-		out = new ObjectOutputStream(baos);
-		out.writeObject(complexObject);
-		out.close();
-
-		return baos.toByteArray();
-
-	}
-
-	/** Deciphers an object */
-	private Cipher mDeCipher;
-	/** Enciphers an object */
-	private Cipher mEnCipher;
-	/** The secret key, not to be shared */
-	private SecretKeySpec mKey;
-
-	/** The initialization vector length */
-	private static final int IV_LENGTH = 16;
 
 }

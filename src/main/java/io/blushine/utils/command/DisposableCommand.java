@@ -1,4 +1,4 @@
-package com.spiddekauga.utils.command;
+package io.blushine.utils.command;
 
 /**
  * Implement this interface if a command needs to dispose resources after it has been used. Works

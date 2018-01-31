@@ -1,4 +1,4 @@
-package com.spiddekauga.utils;
+package io.blushine.utils;
 
 /**
  * Fired when a progress bar (or something else) should be updated.
