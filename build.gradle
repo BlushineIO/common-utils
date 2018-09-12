@@ -1,8 +1,10 @@
 apply plugin: 'java'
+apply plugin: 'kotlin'
+
 
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 version = '0.1.1-SNAPSHOT'
-group = 'com.spiddekauga'
+group = 'io.blushine'
 
 jar {
     manifest {
@@ -21,6 +23,7 @@ repositories {
 }
 
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersionVal"
     implementation 'com.google.guava:guava:23.5-jre'
     implementation 'com.squareup:otto:1.3.8'
 }
